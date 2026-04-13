@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--accent:#1D9E75;--accent-light:#E1F5EEaa;--accent-dark:#0F6E56;--danger:#A32D2D;--warn:#854F0B;--r:10px;--rl:14px}
+body{font-family:system-ui,sans-serif;font-size:14px;color:var(--color-text-primary,#1a1a1a);background:transparent}
+.app{max-width:980px;margin:0 auto;padding:1rem 1rem 3rem}
+/* topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:.75rem 1rem;background:var(--color-background-primary,#fff);border:0.5px solid var(--color-border-tertiary,#e5e5e5);border-radius:var(--rl);margin-bottom:1.25rem}
+.topbar-title{font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px}
+.badge{font-size:11px;background:#E1F5EE;color:var(--accent-dark);padding:2px 8px;border-radius:20px;font-weight:500}
+.topbar-actions{display:flex;gap:6px;flex-wrap:wrap}
+.abtn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border:0.5px solid var(--color-border-secondary,#ccc);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--color-text-secondary,#666);transition:all .15s}
+.abtn:hover{background:var(--color-background-secondary,#f5f5f5);transform:translateY(-1px)}
+.abtn.save{border-color:var(--accent);color:var(--accent-dark)}.abtn.save:hover{background:#E1F5EE}
+.abtn.del{border-color:#f0a0a0;color:var(--danger)}.abtn.del:hover{background:#FCEBEB}
+/* nav */
+nav{display:flex;gap:4px;flex-wrap:wrap;padding:4px;background:var(--color-background-secondary,#f5f5f5);border-radius:var(--rl);margin-bottom:1.5rem}
+.tab{padding:7px 14px;border:none;border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--color-text-secondary,#666);transition:all .15s;white-space:nowrap}
+.tab.active{background:var(--color-background-primary,#fff);color:var(--color-text-primary,#111);font-weight:500;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.tab:hover:not(.active){background:rgba(255,255,255,.6)}
+/* sections */
+.sec{display:none}.sec.active{display:block}
+/* cards */
+.card{background:var(--color-background-primary,#fff);border:0.5px solid var(--color-border-tertiary,#e5e5e5);border-radius:var(--rl);padding:1.25rem 1.5rem;margin-bottom:1rem}
+.card:hover{box-shadow:0 2px 12px rgba(0,0,0,.05)}
+h2{font-size:16px;font-weight:500;margin-bottom:1.1rem;display:flex;align-items:center;gap:8px}
+.icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;background:#E1F5EE;color:var(--accent-dark);flex-shrink:0}
+h3{font-size:11px;font-weight:500;margin:1.25rem 0 .6rem;color:var(--color-text-secondary,#888);text-transform:uppercase;letter-spacing:.04em}
+/* grids */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:5px}
+label{font-size:11px;font-weight:500;color:var(--color-text-secondary,#777);text-transform:uppercase;letter-spacing:.03em}
+input,select{width:100%;padding:8px 11px;border:0.5px solid var(--color-border-secondary,#ddd);border-radius:var(--r);font-size:13px;background:var(--color-background-primary,#fff);color:var(--color-text-primary,#111);transition:border-color .15s}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+input[readonly]{background:var(--color-background-secondary,#f5f5f5);color:var(--color-text-secondary,#888);cursor:default}
+/* pem bar */
+.pem-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:1rem 1.25rem;background:#E1F5EEaa;border-radius:var(--rl);border:0.5px solid #9FE1CB;margin-bottom:1.25rem}
+.pem-lbl{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--accent-dark);margin-bottom:3px}
+.pem-val{font-size:22px;font-weight:500;color:var(--accent-dark)}
+.pem-sub{font-size:12px;color:var(--accent-dark);opacity:.7;margin-top:2px}
+/* sotano block */
+.sot-block{padding:.9rem 1rem;background:var(--color-background-secondary,#f5f5f5);border-radius:var(--r);border:0.5px solid var(--color-border-tertiary,#e5e5e5);margin-bottom:1rem}
+/* toggle */
+.tog-row{display:flex;gap:4px;margin-bottom:1rem;background:var(--color-background-secondary,#f5f5f5);padding:4px;border-radius:var(--r);width:fit-content}
+.tbtn{padding:5px 14px;border:none;border-radius:8px;background:transparent;cursor:pointer;font-size:12px;color:var(--color-text-secondary,#666);transition:all .15s}
+.tbtn.active{background:var(--color-background-primary,#fff);color:var(--color-text-primary,#111);font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.sub{display:none}.sub.active{display:block}
+/* tables */
+table.ct{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:.75rem}
+table.ct th{text-align:left;font-weight:500;padding:7px 8px;border-bottom:0.5px solid var(--color-border-tertiary,#e5e5e5);color:var(--color-text-secondary,#888);font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+table.ct td{padding:4px 6px;border-bottom:0.5px solid var(--color-border-tertiary,#e5e5e5);vertical-align:middle}
+table.ct input[type=text]{border:0.5px solid var(--color-border-tertiary,#e5e5e5);background:var(--color-background-primary,#fff);padding:5px 7px;border-radius:6px;font-size:13px;color:var(--color-text-primary,#111);width:100%}
+table.ct input[type=number]{border:0.5px solid var(--color-border-tertiary,#e5e5e5);background:var(--color-background-primary,#fff);padding:5px 7px;border-radius:6px;font-size:13px;text-align:right;color:var(--color-text-primary,#111)}
+table.ct input[type=number].wi{width:64px}
+table.ct input[type=number].wm{width:120px}
+table.ct input[type=number][readonly]{background:var(--color-background-secondary,#f5f5f5);color:var(--color-text-secondary,#888)}
+table.ct input:focus{outline:none;border-color:var(--accent)}
+.pc{text-align:right;font-size:12px;color:var(--color-text-secondary,#888);width:64px;padding-right:8px!important}
+.bdel{background:none;border:none;cursor:pointer;color:var(--color-text-secondary,#888);font-size:15px;padding:3px 6px;border-radius:6px;width:28px;transition:all .15s}
+.bdel:hover{color:var(--danger);background:#FCEBEB}
+.badd{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:0.5px dashed var(--color-border-secondary,#ccc);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--color-text-secondary,#888);margin-top:6px;transition:all .15s}
+.badd:hover{background:#E1F5EE;color:var(--accent-dark);border-color:var(--accent)}
+/* ingresos total */
+.ing-bar{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1rem;background:#E1F5EEaa;border-radius:var(--r);margin-bottom:1rem;border:0.5px solid #9FE1CB}
+.ing-lbl{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--accent-dark)}
+.ing-val{font-size:22px;font-weight:500;color:var(--accent-dark)}
+/* metrics */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.25rem}
+.met{background:var(--color-background-secondary,#f5f5f5);border-radius:var(--r);padding:.85rem 1rem;border:0.5px solid var(--color-border-tertiary,#e5e5e5)}
+.ml{font-size:11px;color:var(--color-text-secondary,#888);margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:.03em}
+.mv{font-size:19px;font-weight:500}
+.mv.green{color:var(--accent-dark)}.mv.red{color:var(--danger)}.mv.amber{color:var(--warn)}
+/* semaforo */
+.sem{display:flex;align-items:center;gap:10px;padding:.9rem 1.1rem;border-radius:var(--r);margin-bottom:1.25rem;font-weight:500;font-size:14px}
+.sem.verde{background:#EAF3DE;color:#27500A;border:0.5px solid #97C459}
+.sem.amarillo{background:#FAEEDA;color:#633806;border:0.5px solid #EF9F27}
+.sem.rojo{background:#FCEBEB;color:#791F1F;border:0.5px solid #F09595}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot.verde{background:#3B6D11}.dot.amarillo{background:#854F0B}.dot.rojo{background:#A32D2D}
+/* res table */
+.rt{width:100%;border-collapse:collapse;font-size:13px;margin-top:.5rem}
+.rt td{padding:7px 8px;border-bottom:0.5px solid var(--color-border-tertiary,#e5e5e5)}
+.rt td:last-child{text-align:right;font-weight:500}
+.rt tr.tot td{font-weight:500;font-size:14px;border-top:1px solid var(--color-border-secondary,#ccc);padding-top:10px}
+.rt tr.ing td:last-child{color:var(--accent-dark)}.rt tr.cost td:last-child{color:var(--danger)}
+/* ratios */
+.ratgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:.75rem}
+.ratbox{background:var(--color-background-secondary,#f5f5f5);border-radius:var(--r);padding:.65rem .85rem;border:0.5px solid var(--color-border-tertiary,#e5e5e5)}
+.ratl{font-size:11px;color:var(--color-text-secondary,#888);margin-bottom:3px;font-weight:500}
+.ratv{font-size:15px;font-weight:500}
+.sep{border:none;border-top:0.5px solid var(--color-border-tertiary,#e5e5e5);margin:1rem 0}
+.cwrap{position:relative;width:100%;height:260px;margin-top:1rem}
+.toast{display:none;position:fixed;bottom:24px;right:24px;background:#EAF3DE;color:#27500A;border:0.5px solid #3B6D11;border-radius:var(--r);padding:11px 18px;font-size:13px;font-weight:500;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+@media(max-width:600px){.g2,.g3,.g4{grid-template-columns:1fr}.mgrid{grid-template-columns:1fr 1fr}.pem-bar{grid-template-columns:1fr 1fr}}
+@media print{.topbar,.topbar-actions,nav,.badd,.bdel,.tog-row,.abtn{display:none!important}.sec{display:block!important}.card{border:1px solid #ccc;page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-title"><span id="topbar-nombre">Analizador de Promociones</span><span class="badge">Promotora</span></div>
+  <div class="topbar-actions">
+    <button class="abtn save" onclick="guardarDatos()">💾 Guardar</button>
+    <button class="abtn" onclick="abrirProyectos()">📁 Mis proyectos</button>
+    <button class="abtn" onclick="exportarPDF()">📄 PDF</button>
+    <button class="abtn" onclick="exportarExcel()">📊 Excel</button>
+    <button class="abtn del" onclick="resetDatos()">🗑 Limpiar</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <button class="tab active" onclick="showTab('proyecto',this)">Proyecto</button>
+  <button class="tab" onclick="showTab('suelo',this)">Suelo</button>
+  <button class="tab" onclick="showTab('construccion',this)">Construcción</button>
+  <button class="tab" onclick="showTab('gastos',this)">Gastos técnicos y varios</button>
+  <button class="tab" onclick="showTab('financiacion',this)">Financiación</button>
+  <button class="tab" onclick="showTab('ingresos',this)">Ingresos</button>
+  <button class="tab" onclick="showTab('resultados',this)">Resultados</button>
+</nav>
+
+<!-- PROYECTO -->
+<div class="sec active" id="s-proyecto">
+  <div class="card">
+    <h2><span class="icon">🏗</span>Datos del proyecto</h2>
+    <div class="g2">
+      <div class="field"><label>Nombre del proyecto</label><input id="nombre" value="Promoción Ejemplo" oninput="document.getElementById('topbar-nombre').textContent=this.value||'Analizador de Promociones'"/></div>
+      <div class="field"><label>Tipo de promoción</label>
+        <select id="tipo" onchange="actualizarTipo()">
+          <option value="unifamiliar">Unifamiliar (chalets / adosados)</option>
+          <option value="plurifamiliar">Bloque plurifamiliar</option>
+        </select>
+      </div>
+    </div>
+    <div class="g3" style="margin-top:12px">
+      <div class="field"><label>Nº de viviendas</label><input type="number" id="numViviendas" value="10" min="1" oninput="calcular()"/></div>
+      <div class="field"><label>Sup. construida / vivienda (m²)</label><input type="number" id="supCon" value="120" oninput="calcular()"/></div>
+      <div class="field"><label>Sup. útil / vivienda (m²)</label><input type="number" id="supUtil" value="100" oninput="calcular()"/></div>
+    </div>
+    <div class="g3" style="margin-top:12px">
+      <div class="field"><label>Garajes (uds)</label><input type="number" id="garajes" value="10" oninput="calcular()"/></div>
+      <div class="field"><label>Trasteros (uds)</label><input type="number" id="trasteros" value="5" oninput="calcular()"/></div>
+      <div class="field" id="field-plantas" style="display:none"><label>Nº de plantas</label><input type="number" id="plantas" value="4" oninput="calcular()"/></div>
+    </div>
+    <div class="g3" style="margin-top:12px">
+      <div class="field"><label>Sótano</label>
+        <select id="sotano" onchange="calcular()">
+          <option value="no">No</option>
+          <option value="si">Sí</option>
+        </select>
+      </div>
+      <div class="field" id="field-m2sotano" style="display:none"><label>M² de sótano</label><input type="number" id="m2Sotano" value="0" oninput="calcular()"/></div>
+    </div>
+    <div class="g2" style="margin-top:12px">
+      <div class="field"><label>Duración de la obra (meses)</label><input type="number" id="mesesObra" value="18" oninput="calcular()"/></div>
+      <div class="field"><label>Ritmo de ventas (meses totales)</label><input type="number" id="mesesVentas" value="24" oninput="calcular()"/></div>
+    </div>
+  </div>
+</div>
+
+<!-- SUELO -->
+<div class="sec" id="s-suelo">
+  <div class="card">
+    <h2><span class="icon">🌍</span>Adquisición del suelo</h2>
+    <div class="g2">
+      <div class="field"><label>Precio de compra del suelo (€)</label><input type="number" id="precioSuelo" value="500000" oninput="calcular()"/></div>
+      <div class="field"><label>ITP / AJD (%)</label><input type="number" id="itpSuelo" value="10" step="0.1" oninput="calcular()"/></div>
+    </div>
+    <div class="g3" style="margin-top:12px">
+      <div class="field"><label>Notaría y registro (€)</label><input type="number" id="notariaSuelo" value="3000" oninput="calcular()"/></div>
+      <div class="field"><label>Corretaje / intermediación (€)</label><input type="number" id="corretajeSuelo" value="0" oninput="calcular()"/></div>
+      <div class="field"><label>Otros gastos suelo (€)</label><input type="number" id="otrosSuelo" value="2000" oninput="calcular()"/></div>
+    </div>
+    <div class="sep"></div>
+    <h3>Ratios del suelo</h3>
+    <div class="ratgrid" id="suelo-ratios"></div>
+  </div>
+</div>
+
+<!-- CONSTRUCCIÓN -->
+<div class="sec" id="s-construccion">
+  <div class="card">
+    <h2><span class="icon">🧱</span>Costes de construcción</h2>
+    <div class="pem-bar">
+      <div>
+        <div class="pem-lbl">M² construidos totales</div>
+        <div class="pem-val" id="pem-m2-total">—</div>
+        <div class="pem-sub" id="pem-m2-sub">—</div>
+      </div>
+      <div>
+        <div class="pem-lbl">PEM total</div>
+        <div class="pem-val" id="pem-val">—</div>
+        <div class="pem-sub" id="pem-sub2">—</div>
+      </div>
+    </div>
+    <!-- Sótano block -->
+    <div class="sot-block" id="sot-block" style="display:none">
+      <h3 style="margin-top:0">Sótano</h3>
+      <div class="g3">
+        <div class="field"><label>M² de sótano</label><input type="number" id="m2SotanoConst" readonly/></div>
+        <div class="field"><label>Coste ejecución sótano (€/m²)</label><input type="number" id="costeSotano" value="450" oninput="calcular()"/></div>
+        <div class="field"><label>Coste total sótano (€)</label><input type="number" id="costeTotalSotano" readonly/></div>
+      </div>
+    </div>
+    <div class="tog-row">
+      <button class="tbtn active" id="btn-rapido" onclick="toggleConst('rapido')">Método rápido (€/m²)</button>
+      <button class="tbtn" id="btn-detallado" onclick="toggleConst('detallado')">Desglose por capítulos</button>
+    </div>
+    <div class="sub active" id="const-rapido">
+      <div class="g3">
+        <div class="field"><label>Coste construcción (€/m² construido)</label><input type="number" id="costePorM2" value="900" oninput="calcular()"/></div>
+        <div class="field"><label>Urbanización exterior (€)</label><input type="number" id="urbanizacion" value="30000" oninput="calcular()"/></div>
+        <div class="field"><label>Partidas adicionales (€)</label><input type="number" id="adicionales" value="0" oninput="calcular()"/></div>
+      </div>
+    </div>
+    <div class="sub" id="const-detallado">
+      <table class="ct">
+        <thead><tr><th>Capítulo</th><th style="text-align:right;width:120px">Importe (€)</th><th style="text-align:right;width:64px">% PEM</th><th style="width:30px"></th></tr></thead>
+        <tbody id="cap-construccion-body"></tbody>
+      </table>
+      <button class="badd" onclick="addRow('construccion')">+ Añadir capítulo</button>
+    </div>
+  </div>
+</div>
+
+<!-- GASTOS -->
+<div class="sec" id="s-gastos">
+  <div class="card">
+    <h2><span class="icon">📋</span>Gastos técnicos y varios</h2>
+    <table class="ct">
+      <thead><tr><th>Concepto</th><th style="text-align:right;width:70px">% PEM</th><th style="text-align:right;width:130px">Importe (€)</th><th style="text-align:right;width:64px">% s/PEM</th><th style="width:30px"></th></tr></thead>
+      <tbody id="cap-gastos-body"></tbody>
+    </table>
+    <button class="badd" onclick="addRow('gastos')">+ Añadir concepto</button>
+  </div>
+</div>
+
+<!-- FINANCIACIÓN -->
+<div class="sec" id="s-financiacion">
+  <div class="card">
+    <h2><span class="icon">🏦</span>Financiación</h2>
+    <h3>Préstamo promotor</h3>
+    <div class="g3">
+      <div class="field"><label>Importe del préstamo (€)</label><input type="number" id="prestamo" value="800000" oninput="calcular()"/></div>
+      <div class="field"><label>Tipo de interés anual (%)</label><input type="number" id="tipoInteres" value="4.5" step="0.1" oninput="calcular()"/></div>
+      <div class="field"><label>Plazo del préstamo (meses)</label><input type="number" id="plazoPrestamo" value="24" oninput="calcular()"/></div>
+    </div>
+    <div class="g2" style="margin-top:12px">
+      <div class="field"><label>Comisión apertura (%)</label><input type="number" id="comisionPrestamo" value="1" step="0.1" oninput="calcular()"/></div>
+      <div class="field"><label>Otros gastos financieros (€)</label><input type="number" id="otrosFinanc" value="0" oninput="calcular()"/></div>
+    </div>
+  </div>
+</div>
+
+<!-- INGRESOS -->
+<div class="sec" id="s-ingresos">
+  <div class="card">
+    <h2><span class="icon">💰</span>Ingresos por venta</h2>
+    <div class="ing-bar">
+      <div class="ing-lbl">Total ingresos</div>
+      <div class="ing-val" id="ing-total-display">0 €</div>
+    </div>
+    <table class="ct">
+      <thead><tr><th>Inmueble / Concepto</th><th style="text-align:right;width:80px">Uds</th><th style="text-align:right;width:150px">Precio / ud (€)</th><th style="text-align:right;width:140px">Total (€)</th><th style="width:30px"></th></tr></thead>
+      <tbody id="cap-ingresos-body"></tbody>
+    </table>
+    <button class="badd" onclick="addRow('ingresos')">+ Añadir entrada</button>
+  </div>
+</div>
+
+<!-- RESULTADOS -->
+<div class="sec" id="s-resultados">
+  <div class="card">
+    <h2><span class="icon">📊</span>Viabilidad económica — <span id="pdf-nombre" style="font-weight:400;color:var(--color-text-secondary,#888)"></span></h2>
+    <div id="semaforo-box" class="sem verde"><div class="dot verde" id="sem-dot"></div><span id="sem-txt"></span></div>
+    <div class="mgrid" id="metrics"></div>
+    <div class="sep"></div>
+    <h3>Resumen de costes e ingresos</h3>
+    <table class="rt" id="resumen-table"></table>
+    <div class="sep"></div>
+    <h3>Cashflow por fases</h3>
+    <div style="display:flex;gap:16px;margin-top:.5rem;font-size:12px;color:var(--color-text-secondary,#888)">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#F09595;display:inline-block"></span>Salidas</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#5DCAA5;display:inline-block"></span>Entradas</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:24px;height:2px;background:#378ADD;display:inline-block"></span>Acumulado</span>
+    </div>
+    <div class="cwrap"><canvas id="cashflowChart"></canvas></div>
+    <div class="sep"></div>
+    <h3>Distribución de costes</h3>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px;position:relative;height:220px"><canvas id="pieChart"></canvas></div>
+      <div style="flex:1;min-width:180px;display:flex;flex-direction:column;justify-content:center" id="pie-legend"></div>
+    </div>
+  </div>
+</div>
+
+</div>
+<div class="toast" id="toast">✓ Datos guardados</div>
+
+<!-- MODAL PROYECTOS -->
+<div id="modal-proyectos" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--color-background-primary,#fff);border-radius:var(--rl);padding:1.5rem;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h2 style="margin:0;font-size:16px">📁 Proyectos guardados</h2>
+      <button class="abtn" onclick="cerrarModal()">✕ Cerrar</button>
+    </div>
+    <div id="lista-proyectos"></div>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────
+const rows = {
+  construccion:[
+    {n:'Movimiento de tierras',v:0},{n:'Cimentación',v:0},{n:'Estructura',v:0},
+    {n:'Cubierta y fachada',v:0},{n:'Particiones y albañilería',v:0},
+    {n:'Instalaciones (elect., fontanería, clima)',v:0},{n:'Acabados interiores',v:0},
+    {n:'Carpintería y vidriería',v:0},{n:'Urbanización y zonas comunes',v:0},
+    {n:'Seguridad y salud',v:0},{n:'Control de calidad',v:0},{n:'Imprevistos y varios',v:0}
+  ],
+  gastos:[
+    {n:'Honorarios arquitecto',pct:3,v:0},
+    {n:'Honorarios aparejador',pct:2,v:0},
+    {n:'Licencia de obras',pct:3.5,v:0},
+    {n:'Tasas municipales',pct:0,v:5000},
+    {n:'OCT / Control técnico',pct:0,v:8000},
+    {n:'Seguros',pct:0,v:6000},
+    {n:'Estudio geotécnico y topografía',pct:0,v:4000},
+    {n:'IBI durante la obra',pct:0,v:0},
+    {n:'Comisión agencia venta',pct:3,v:0},
+    {n:'Marketing y publicidad',pct:0,v:15000},
+    {n:'Otros gastos',pct:0,v:0}
+  ],
+  ingresos:[
+    {n:'Viviendas',uds:10,precio:180000},
+    {n:'Garajes',uds:10,precio:18000},
+    {n:'Trasteros',uds:5,precio:6000}
+  ]
+};
+
+let constMode='rapido', cashChart=null, pieInst=null, lastCalc={};
+
+// ── Supabase ──────────────────────────────────────────────────────────
+const SB_URL='https://xadeihnqybwabxahwntx.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhZGVpaG5xeWJ3YWJ4YWh3bnR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjY1MjksImV4cCI6MjA5MDg0MjUyOX0.z8jziFPpwBfbZ9SNVcuSc8eFaUYkcA-I5Kr4BXSgUPo';
+const SB_HEADERS={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+
+async function sbGuardar(nombre, datos){
+  // Busca si ya existe un proyecto con ese nombre
+  const buscar = await fetch(`${SB_URL}/rest/v1/proyectos?nombre=eq.${encodeURIComponent(nombre)}&select=id`,{headers:SB_HEADERS});
+  const existentes = await buscar.json();
+  if(existentes.length>0){
+    // Update
+    await fetch(`${SB_URL}/rest/v1/proyectos?id=eq.${existentes[0].id}`,{
+      method:'PATCH', headers:{...SB_HEADERS,'Prefer':'return=minimal'},
+      body:JSON.stringify({datos, actualizado_at: new Date().toISOString()})
+    });
+  } else {
+    // Insert
+    await fetch(`${SB_URL}/rest/v1/proyectos`,{
+      method:'POST', headers:{...SB_HEADERS,'Prefer':'return=minimal'},
+      body:JSON.stringify({nombre, datos})
+    });
+  }
+}
+
+async function sbCargarLista(){
+  const res = await fetch(`${SB_URL}/rest/v1/proyectos?select=id,nombre,actualizado_at&order=actualizado_at.desc`,{headers:SB_HEADERS});
+  return await res.json();
+}
+
+async function sbCargarDatos(id){
+  const res = await fetch(`${SB_URL}/rest/v1/proyectos?id=eq.${id}&select=datos`,{headers:SB_HEADERS});
+  const arr = await res.json();
+  return arr.length>0 ? arr[0].datos : null;
+}
+
+async function sbEliminar(id){
+  await fetch(`${SB_URL}/rest/v1/proyectos?id=eq.${id}`,{method:'DELETE',headers:SB_HEADERS});
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────
+const g = id => { const el=document.getElementById(id); return el?(+el.value||0):0; };
+const gv = id => { const el=document.getElementById(id); return el?el.value:''; };
+const fc = v => v.toLocaleString('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+const pctStr = (v,b) => b>0?(v/b*100).toFixed(1)+'%':'—';
+
+function getPEMBase(){
+  if(constMode==='rapido') return g('costePorM2')*g('numViviendas')*g('supCon')+g('urbanizacion')+g('adicionales');
+  return rows.construccion.reduce((a,r)=>a+r.v,0);
+}
+function getSotanoCost(){
+  return gv('sotano')==='si' ? g('m2Sotano')*g('costeSotano') : 0;
+}
+function getPEM(){ return getPEMBase()+getSotanoCost(); }
+
+// ── Render tablas ─────────────────────────────────────────────────────
+function renderConstruccion(pem){
+  const tb=document.getElementById('cap-construccion-body'); tb.innerHTML='';
+  rows.construccion.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=
+      `<td><input type="text" value="${r.n}" oninput="rows.construccion[${i}].n=this.value" style="width:100%;text-align:left"/></td>`+
+      `<td><input type="number" class="wm" value="${Math.round(r.v)}" oninput="rows.construccion[${i}].v=+this.value;calcular()"/></td>`+
+      `<td class="pc">${pctStr(r.v,pem)}</td>`+
+      `<td><button class="bdel" onclick="removeRow('construccion',${i})">×</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function renderGastos(pem){
+  const tb=document.getElementById('cap-gastos-body'); tb.innerHTML='';
+  rows.gastos.forEach((r,i)=>{
+    if(r.pct>0) r.v=Math.round(pem*r.pct/100);
+    const tr=document.createElement('tr');
+    tr.innerHTML=
+      `<td><input type="text" value="${r.n}" oninput="rows.gastos[${i}].n=this.value" style="width:100%;text-align:left"/></td>`+
+      `<td><input type="number" class="wi" value="${r.pct||''}" placeholder="—" step="0.1" oninput="rows.gastos[${i}].pct=+this.value;rows.gastos[${i}].v=Math.round(getPEM()*(+this.value)/100);calcular()"/></td>`+
+      `<td><input type="number" class="wm" value="${Math.round(r.v)}" ${r.pct>0?'readonly':''} oninput="rows.gastos[${i}].v=+this.value;calcular()"/></td>`+
+      `<td class="pc">${pctStr(r.v,pem)}</td>`+
+      `<td><button class="bdel" onclick="removeRow('gastos',${i})">×</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function renderIngresos(){
+  const tb=document.getElementById('cap-ingresos-body'); tb.innerHTML='';
+  let total=0;
+  rows.ingresos.forEach((r,i)=>{
+    const t=Math.round((r.uds||0)*(r.precio||0)); total+=t;
+    const tr=document.createElement('tr');
+    tr.innerHTML=
+      `<td><input type="text" value="${r.n}" oninput="rows.ingresos[${i}].n=this.value" style="width:100%;text-align:left"/></td>`+
+      `<td><input type="number" class="wi" value="${r.uds||0}" oninput="rows.ingresos[${i}].uds=+this.value;calcular()"/></td>`+
+      `<td><input type="number" class="wm" value="${r.precio||0}" oninput="rows.ingresos[${i}].precio=+this.value;calcular()"/></td>`+
+      `<td style="text-align:right;font-size:13px;font-weight:500;white-space:nowrap;padding-right:6px">${fc(t)}</td>`+
+      `<td><button class="bdel" onclick="removeRow('ingresos',${i})">×</button></td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('ing-total-display').textContent=fc(total);
+  return total;
+}
+
+function addRow(key){
+  if(key==='construccion') rows.construccion.push({n:'Nuevo capítulo',v:0});
+  else if(key==='gastos') rows.gastos.push({n:'Nuevo concepto',pct:0,v:0});
+  else if(key==='ingresos') rows.ingresos.push({n:'Nuevo inmueble',uds:1,precio:0});
+  calcular();
+}
+function removeRow(key,i){ rows[key].splice(i,1); calcular(); }
+
+function initConstDetallado(){
+  const pem=g('costePorM2')*g('numViviendas')*g('supCon');
+  const refs=[0.03,0.09,0.18,0.12,0.10,0.18,0.10,0.08,0.05,0.02,0.01,0.04];
+  rows.construccion.forEach((r,i)=>{ if(r.v===0) r.v=Math.round(pem*refs[i]); });
+}
+
+function toggleConst(mode){
+  constMode=mode;
+  document.getElementById('btn-rapido').classList.toggle('active',mode==='rapido');
+  document.getElementById('btn-detallado').classList.toggle('active',mode==='detallado');
+  document.getElementById('const-rapido').classList.toggle('active',mode==='rapido');
+  document.getElementById('const-detallado').classList.toggle('active',mode==='detallado');
+  if(mode==='detallado') initConstDetallado();
+  calcular();
+}
+
+// ── Main calc ─────────────────────────────────────────────────────────
+function calcular(){
+  const nV=g('numViviendas'), sc=g('supCon');
+  const m2Total=nV*sc;
+  const tieneSot=gv('sotano')==='si';
+  const m2Sot=tieneSot?g('m2Sotano'):0;
+  const costeSot=tieneSot?m2Sot*g('costeSotano'):0;
+  const pemBase=getPEMBase();
+  const pem=pemBase+costeSot;
+
+  // Proyecto: mostrar campo m2 sotano
+  document.getElementById('field-m2sotano').style.display=tieneSot?'block':'none';
+
+  // Construcción: bloque sótano
+  const sb=document.getElementById('sot-block');
+  if(sb){
+    sb.style.display=tieneSot?'block':'none';
+    if(tieneSot){
+      document.getElementById('m2SotanoConst').value=m2Sot;
+      document.getElementById('costeTotalSotano').value=Math.round(costeSot);
+    }
+  }
+
+  // PEM bar
+  document.getElementById('pem-m2-total').textContent=m2Total.toLocaleString('es-ES')+' m²'+(tieneSot?' + '+m2Sot+' m² sót.':'');
+  document.getElementById('pem-m2-sub').textContent=nV+' viviendas × '+sc+' m²'+(tieneSot?' + sótano':'');
+  document.getElementById('pem-val').textContent=fc(pem);
+  document.getElementById('pem-sub2').textContent=tieneSot?'Incluye '+fc(costeSot)+' sótano':(constMode==='rapido'?fc(g('costePorM2'))+'/m²':'desglose capítulos');
+
+  renderConstruccion(pem);
+  renderGastos(pem);
+  const ingTotal=renderIngresos();
+
+  // Costes
+  const ps=g('precioSuelo');
+  const costeSuelo=ps+ps*g('itpSuelo')/100+g('notariaSuelo')+g('corretajeSuelo')+g('otrosSuelo');
+  const costeCon=pem;
+  const costeGastos=rows.gastos.reduce((a,r)=>a+r.v,0);
+  const prest=g('prestamo');
+  const gastosFin=prest*g('tipoInteres')/100*g('plazoPrestamo')/12+prest*g('comisionPrestamo')/100+g('otrosFinanc');
+  const costesTotal=costeSuelo+costeCon+costeGastos+gastosFin;
+  const margenBruto=ingTotal-costeSuelo-costeCon;
+  const margenNeto=ingTotal-costesTotal;
+  const pctNeto=ingTotal>0?margenNeto/ingTotal*100:0;
+  const pctCoste=costesTotal>0?margenNeto/costesTotal*100:0;
+
+  lastCalc={pem,costeSuelo,costeCon,costeGastos,gastosFin,costesTotal,margenBruto,margenNeto,pctNeto,pctCoste,ingTotal,nV};
+
+  // Ratios suelo
+  document.getElementById('suelo-ratios').innerHTML=[
+    {l:'Coste total suelo',v:fc(costeSuelo)},
+    {l:'Suelo / PEM',v:pctStr(costeSuelo,pem)},
+    {l:'Suelo / ingresos',v:ingTotal>0?pctStr(costeSuelo,ingTotal):'—'},
+    {l:'Suelo por vivienda',v:nV>0?fc(costeSuelo/nV):'—'}
+  ].map(r=>`<div class="ratbox"><div class="ratl">${r.l}</div><div class="ratv">${r.v}</div></div>`).join('');
+
+  // Semáforo
+  document.getElementById('pdf-nombre').textContent=gv('nombre');
+  const sem=document.getElementById('semaforo-box'),dot=document.getElementById('sem-dot'),txt=document.getElementById('sem-txt');
+  sem.className='sem';dot.className='dot';
+  if(pctNeto>=15){sem.classList.add('verde');dot.classList.add('verde');txt.textContent='Promoción viable — margen atractivo (>15%)';}
+  else if(pctNeto>=8){sem.classList.add('amarillo');dot.classList.add('amarillo');txt.textContent='Viabilidad ajustada — revisar partidas (8–15%)';}
+  else{sem.classList.add('rojo');dot.classList.add('rojo');txt.textContent='Promoción no viable con estos parámetros (<8%)';}
+
+  // Métricas
+  document.getElementById('metrics').innerHTML=[
+    {l:'Ingresos totales',v:fc(ingTotal)},
+    {l:'Costes totales',v:fc(costesTotal)},
+    {l:'Margen bruto',v:fc(margenBruto),c:margenBruto>=0?'green':'red'},
+    {l:'Margen neto',v:fc(margenNeto),c:margenNeto>=0?'green':'red'},
+    {l:'% margen s/ingresos',v:pctNeto.toFixed(1)+'%',c:pctNeto>=15?'green':pctNeto>=8?'amber':'red'},
+    {l:'% margen s/coste',v:pctCoste.toFixed(1)+'%',c:pctCoste>=20?'green':pctCoste>=10?'amber':'red'},
+    {l:'Coste por vivienda',v:fc(nV?costesTotal/nV:0)},
+    {l:'PEM total',v:fc(pem)}
+  ].map(m=>`<div class="met"><div class="ml">${m.l}</div><div class="mv ${m.c||''}">${m.v}</div></div>`).join('');
+
+  // Resumen
+  const ingRows=rows.ingresos.map(r=>`<tr class="ing"><td>${r.n}</td><td>${fc(Math.round((r.uds||0)*(r.precio||0)))}</td></tr>`).join('');
+  document.getElementById('resumen-table').innerHTML=`
+    ${ingRows}
+    <tr class="tot ing"><td>Total ingresos</td><td>${fc(ingTotal)}</td></tr>
+    <tr><td style="padding:4px"></td><td></td></tr>
+    <tr class="cost"><td>Coste suelo (con gastos)</td><td>${fc(costeSuelo)}</td></tr>
+    <tr class="cost"><td>Coste construcción (PEM)</td><td>${fc(costeCon)}</td></tr>
+    <tr class="cost"><td>Gastos técnicos y varios</td><td>${fc(costeGastos)}</td></tr>
+    <tr class="cost"><td>Gastos financieros</td><td>${fc(gastosFin)}</td></tr>
+    <tr class="tot cost"><td>Total costes</td><td>${fc(costesTotal)}</td></tr>
+    <tr class="tot"><td>Margen neto</td><td style="color:${margenNeto>=0?'var(--accent-dark)':'var(--danger)'}">${fc(margenNeto)}</td></tr>`;
+
+  // Cashflow
+  const sal=[Math.round(-costeSuelo),Math.round(-(costeGastos*0.3)),Math.round(-(costeCon+costeGastos*0.5+gastosFin)),Math.round(-(costeGastos*0.2))];
+  const ent=[0,0,Math.round(ingTotal*0.15),Math.round(ingTotal*0.85)];
+  let ac=0; const acum=sal.map((s,i)=>{ac+=s+ent[i];return ac;});
+  if(cashChart) cashChart.destroy();
+  cashChart=new Chart(document.getElementById('cashflowChart'),{
+    type:'bar',
+    data:{labels:['Suelo','Proyecto','Obra','Ventas'],datasets:[
+      {label:'Salidas',data:sal,backgroundColor:'#F09595',borderWidth:0,borderRadius:4},
+      {label:'Entradas',data:ent,backgroundColor:'#5DCAA5',borderWidth:0,borderRadius:4},
+      {label:'Acumulado',data:acum,type:'line',borderColor:'#378ADD',backgroundColor:'transparent',pointRadius:4,pointBackgroundColor:'#378ADD',tension:0.4,yAxisID:'y2'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{
+        y:{ticks:{callback:v=>(v<0?'-€':' €')+Math.abs(Math.round(v/1000))+'k'},grid:{color:'rgba(0,0,0,.04)'}},
+        y2:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>(v<0?'-€':' €')+Math.abs(Math.round(v/1000))+'k'}}
+      }}
+  });
+
+  // Pie
+  const pl=['Suelo','Construcción','Gastos técnicos','Financiación'];
+  const pd=[costeSuelo,costeCon,costeGastos,gastosFin].map(Math.round);
+  const pc=['#378ADD','#3B6D11','#854F0B','#888780'];
+  if(pieInst) pieInst.destroy();
+  pieInst=new Chart(document.getElementById('pieChart'),{
+    type:'doughnut',
+    data:{labels:pl,datasets:[{data:pd,backgroundColor:pc,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'60%'}
+  });
+  document.getElementById('pie-legend').innerHTML=pl.map((l,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div style="width:10px;height:10px;border-radius:2px;flex-shrink:0;background:${pc[i]}"></div>
+      <span style="font-size:12px;color:var(--color-text-secondary,#888);flex:1">${l}</span>
+      <span style="font-size:12px;font-weight:500">${fc(pd[i])}</span>
+    </div>`).join('');
+}
+
+// ── Nav ───────────────────────────────────────────────────────────────
+function showTab(id, el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('s-'+id).classList.add('active');
+  if(id==='resultados') calcular();
+}
+
+function actualizarTipo(){
+  document.getElementById('field-plantas').style.display=gv('tipo')==='plurifamiliar'?'block':'none';
+}
+
+// ── Guardar en nube ───────────────────────────────────────────────────
+async function guardarDatos(){
+  const nombre = document.getElementById('nombre').value || 'Sin nombre';
+  const campos={};
+  CAMPOS.forEach(id=>{ const el=document.getElementById(id); if(el) campos[id]=el.value; });
+  const datos={campos, rows, constMode};
+  // localStorage como backup
+  localStorage.setItem('promo_v3',JSON.stringify(datos));
+  try{
+    await sbGuardar(nombre, datos);
+    mostrarToast('✓ Guardado en la nube correctamente');
+  } catch(e){
+    mostrarToast('⚠️ Error al guardar en la nube');
+    console.warn(e);
+  }
+}
+
+function mostrarToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block';
+  setTimeout(()=>t.style.display='none',2800);
+}
+
+// ── Modal de proyectos ────────────────────────────────────────────────
+async function abrirProyectos(){
+  const modal=document.getElementById('modal-proyectos');
+  const lista=document.getElementById('lista-proyectos');
+  modal.style.display='flex';
+  lista.innerHTML='<div style="color:var(--color-text-secondary);font-size:13px;padding:1rem 0">Cargando...</div>';
+  try{
+    const proyectos = await sbCargarLista();
+    if(proyectos.length===0){
+      lista.innerHTML='<div style="color:var(--color-text-secondary);font-size:13px;padding:1rem 0">No hay proyectos guardados aún.</div>';
+      return;
+    }
+    lista.innerHTML=proyectos.map(p=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary,#e5e5e5)">
+        <div>
+          <div style="font-size:13px;font-weight:500">${p.nombre}</div>
+          <div style="font-size:11px;color:var(--color-text-secondary)">${new Date(p.actualizado_at).toLocaleString('es-ES')}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="abtn" onclick="cargarProyecto('${p.id}')">Abrir</button>
+          <button class="abtn del" onclick="eliminarProyecto('${p.id}',this)">×</button>
+        </div>
+      </div>`).join('');
+  } catch(e){
+    lista.innerHTML='<div style="color:var(--danger);font-size:13px;padding:1rem 0">Error al conectar con la base de datos.</div>';
+  }
+}
+
+function cerrarModal(){ document.getElementById('modal-proyectos').style.display='none'; }
+
+async function cargarProyecto(id){
+  try{
+    const datos = await sbCargarDatos(id);
+    if(!datos){ mostrarToast('⚠️ Error al cargar el proyecto'); return; }
+    aplicarDatos(datos);
+    cerrarModal();
+    mostrarToast('✓ Proyecto cargado correctamente');
+  } catch(e){ mostrarToast('⚠️ Error al cargar'); }
+}
+
+async function eliminarProyecto(id, btn){
+  if(!confirm('¿Eliminar este proyecto de la nube?')) return;
+  try{
+    await sbEliminar(id);
+    btn.closest('div[style]').remove();
+    mostrarToast('✓ Proyecto eliminado');
+  } catch(e){ mostrarToast('⚠️ Error al eliminar'); }
+}
+
+function aplicarDatos(est){
+  if(est.campos) Object.entries(est.campos).forEach(([id,v])=>{ const el=document.getElementById(id); if(el) el.value=v; });
+  if(est.rows){
+    if(est.rows.construccion) rows.construccion=est.rows.construccion;
+    if(est.rows.gastos) rows.gastos=est.rows.gastos;
+    if(est.rows.ingresos) rows.ingresos=est.rows.ingresos;
+  }
+  if(est.constMode){
+    constMode=est.constMode;
+    const esDetallado=constMode==='detallado';
+    document.getElementById('btn-rapido').classList.toggle('active',!esDetallado);
+    document.getElementById('btn-detallado').classList.toggle('active',esDetallado);
+    document.getElementById('const-rapido').classList.toggle('active',!esDetallado);
+    document.getElementById('const-detallado').classList.toggle('active',esDetallado);
+  }
+  actualizarTipo();
+  document.getElementById('topbar-nombre').textContent=document.getElementById('nombre').value||'Analizador de Promociones';
+  calcular();
+}
+
+function cargarDatos(){
+  const raw=localStorage.getItem('promo_v3'); if(!raw) return;
+  try{ aplicarDatos(JSON.parse(raw)); } catch(e){ console.warn('Error cargando local',e); }
+}
+
+function resetDatos(){
+  if(!confirm('¿Seguro que quieres limpiar todos los datos del formulario?')) return;
+  localStorage.removeItem('promo_v3'); location.reload();
+}
+
+function exportarPDF(){
+  showTab('resultados',document.querySelectorAll('.tab')[6]);
+  calcular(); setTimeout(()=>window.print(),400);
+}
+
+function exportarExcel(){
+  calcular();
+  const c=lastCalc, nom=gv('nombre')||'Promocion';
+  const wb=XLSX.utils.book_new();
+  const ws1=XLSX.utils.aoa_to_sheet([
+    ['INFORME DE VIABILIDAD — '+nom.toUpperCase()],
+    ['Fecha',new Date().toLocaleDateString('es-ES')],[],
+    ['INGRESOS','€'],
+    ...rows.ingresos.map(r=>[r.n,Math.round((r.uds||0)*(r.precio||0))]),
+    ['TOTAL INGRESOS',c.ingTotal],[],
+    ['COSTES','€'],
+    ['Coste suelo',c.costeSuelo],['Coste construcción (PEM)',c.costeCon],
+    ['Gastos técnicos y varios',c.costeGastos],['Gastos financieros',c.gastosFin],
+    ['TOTAL COSTES',c.costesTotal],[],
+    ['RESULTADOS','€','%'],
+    ['Margen bruto',c.margenBruto,''],
+    ['Margen neto',c.margenNeto,c.pctNeto.toFixed(2)+'%'],
+    ['% margen s/coste','',c.pctCoste.toFixed(2)+'%'],
+    ['Coste por vivienda',c.nV?Math.round(c.costesTotal/c.nV):0,''],
+  ]);
+  ws1['!cols']=[{wch:35},{wch:18},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Resumen');
+  XLSX.writeFile(wb,nom.replace(/\s+/g,'_')+'_viabilidad.xlsx');
+}
+
+const CAMPOS=['nombre','tipo','numViviendas','supCon','supUtil','garajes','trasteros','plantas',
+  'mesesObra','mesesVentas','sotano','m2Sotano','precioSuelo','itpSuelo','notariaSuelo',
+  'corretajeSuelo','otrosSuelo','costePorM2','urbanizacion','adicionales','costeSotano',
+  'prestamo','tipoInteres','plazoPrestamo','comisionPrestamo','otrosFinanc'];
+
+// ── Boot ──────────────────────────────────────────────────────────────
+cargarDatos();
+calcular();
+</script>
+</body>
+</html>
